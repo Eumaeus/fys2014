@@ -9,6 +9,7 @@ Shared documents for a First Year Seminar at Furman University, Spring, 2014.
 
 [The _Aeneid_](http://www.perseus.tufts.edu/hopper/text?doc=Perseus:text:1999.02.0055)
 
+[_Les Troyens_ (English libretto)](https://github.com/Eumaeus/fys2014/blob/master/texts/refs_eng.md)
 
 
 # Editors
