@@ -19,6 +19,14 @@ Shared documents for a First Year Seminar at Furman University, Spring, 2014.
 - Christopher W. Blackwell
 - Rick Jones
 
+# Specific Projects
+
+- A thorough cross-referencing of Vergil's _Aeneid_ I-IV to _Les Troyens_, by canonical citation.
+- Indexing Wexler images to _Les Troyens_. All images cross-referenced, "default images" selected.
+- Indexing Berlioz' score to citations from the opera.
+- An illustrated _Aeneid_.
+- Attractive web-views of the above.
+
 
 # Notes
 
