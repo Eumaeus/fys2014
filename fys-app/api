@@ -1,0 +1,150 @@
+import edu.harvard.chs.cite.CtsUrn
+import javax.xml.transform.TransformerFactory
+import javax.xml.transform.stream.StreamResult
+import javax.xml.transform.stream.StreamSource
+import groovyx.net.http.*
+
+String contentType = "application/json"
+response.setContentType(contentType)
+response.setHeader( "Access-Control-Allow-Origin", "*")
+
+/*
+Set up variables
+*/
+
+String tripletServerUrl = "http://localhost:3030/folio/"
+String xmlContentType = "text/xml"
+String jsonContentType = "text/json"
+
+def urn = request.getParameter("urn")
+def type = request.getParameter("type")
+def query = ""
+boolean isRange = false
+
+
+
+
+
+if ((urn == null) || (urn == "")){ hasUrn = false } else { hasUrn = true }
+if ((type == null) || (type == "")){ hasType = false } else { hasType = true }
+
+
+/* 
+Query stuff:
+*/
+
+def sparqlPrefix = """
+prefix cts:        <http://www.homermultitext.org/cts/rdf/> 
+prefix cite:        <http://www.homermultitext.org/cite/rdf/> 
+prefix hmt:        <http://www.homermultitext.org/hmt/rdf/> 
+prefix citedata:        <http://www.homermultitext.org/hmt/citedata/> 
+prefix dcterms: <http://purl.org/dc/terms/> 
+prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+prefix  xsd: <http://www.w3.org/2001/XMLSchema#>
+prefix fys: <http://folio.furman.edu/datans/fys/>
+"""
+
+if (hasUrn && hasType) {
+		try {
+				CtsUrn requestUrn = new CtsUrn(urn)
+				isRange = requestUrn.isRange()
+
+				if (type == "pleiades"){
+
+						if (isRange){
+								def urnBase = requestUrn.getUrnWithoutPassage()	
+								CtsUrn fromUrn = new CtsUrn("${urnBase}:${requestUrn.getRangeBegin()}")
+								CtsUrn toUrn = new CtsUrn("${urnBase}:${requestUrn.getRangeEnd()}")
+								def rangeQuery = """${sparqlPrefix} 
+										select ?urn ?geo where {
+
+										?urn fys:inPleiades ?geo .
+										?urn cts:belongsTo+ <${urnBase}> .
+										?urn cts:hasSequence ?seq .
+
+										<${fromUrn}> cts:hasSequence ?startSeq .
+										<${toUrn}> cts:hasSequence ?endSeq .
+
+										filter (?seq >= ?startSeq)
+										filter (?seq <= ?endSeq)
+
+										}
+								"""
+								def encodedQuery = URLEncoder.encode(rangeQuery)	
+				q = "${tripletServerUrl}query?query=${encodedQuery}&output=json"
+						}  else {
+								def nodeQuery = """${sparqlPrefix}
+									select ?urn ?geo where {
+										<${requestUrn}> fys:inPleiades ?geo .
+										bind( <${requestUrn}> as ?urn )
+									}
+									"""
+								def encodedQuery = URLEncoder.encode(nodeQuery)	
+				q = "${tripletServerUrl}query?query=${encodedQuery}&output=json"
+						}
+				    	
+				} else {  // type = img
+
+						if (isRange){
+								def urnBase = requestUrn.getUrnWithoutPassage()	
+								CtsUrn fromUrn = new CtsUrn("${urnBase}:${requestUrn.getRangeBegin()}")
+								CtsUrn toUrn = new CtsUrn("${urnBase}:${requestUrn.getRangeEnd()}")
+								def rangeQuery = """${sparqlPrefix} 
+										select ?urn ?img where {
+
+										?urn cite:illustratedBy ?img .
+										?urn cts:belongsTo+ <${urnBase}> .
+										?urn cts:hasSequence ?seq .
+
+										<${fromUrn}> cts:hasSequence ?startSeq .
+										<${toUrn}> cts:hasSequence ?endSeq .
+
+										filter (?seq >= ?startSeq)
+										filter (?seq <= ?endSeq)
+
+										}
+								"""
+								def encodedQuery = URLEncoder.encode(rangeQuery)	
+				q = "${tripletServerUrl}query?query=${encodedQuery}&output=json"
+						}  else {
+								def nodeQuery = """${sparqlPrefix}
+									select ?urn ?img where {
+										<${requestUrn}> cite:illustratedBy ?img .
+										bind( <${requestUrn}> as ?urn )
+									}
+									"""
+								def encodedQuery = URLEncoder.encode(nodeQuery)	
+				q = "${tripletServerUrl}query?query=${encodedQuery}&output=json"
+						}
+
+				}	
+
+
+				/** Constructor initializing required value for SPARQL endpoint.   */ 
+
+				String replyString
+
+				URL queryUrl = new URL(q)
+				replyString =  queryUrl.getText("UTF-8")
+				
+				println "${replyString}"
+
+		} catch(Exception e) {
+				println """				
+						<error xmlns='http://www.homermultitext.org/xmlns/hmtgraph'>
+						Parameters generated an error:
+						${urn}, ${type}, 
+						Error: ${e}
+				</error>
+				"""
+		}
+	
+} else {
+
+println """<error xmlns='http://www.homermultitext.org/xmlns/hmtgraph'>
+Parameters required: “urn”, “type = ('pleiades' | 'img' )”.
+</error>
+"""
+}
+												
+
